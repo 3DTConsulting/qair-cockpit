@@ -141,6 +141,36 @@
   .ext{font-size:10px;opacity:.85}
   .chartbox{width:100%}
   svg text{font-family:var(--sans)}
+
+  /* ---------- Mobile responsive ---------- */
+  @media (max-width:820px){
+    body{height:auto;overflow-y:auto;overflow-x:hidden}
+    .app{grid-template-columns:1fr;grid-template-rows:auto auto 1fr;height:auto;min-height:100vh}
+    header{flex-wrap:wrap;height:auto;gap:10px 14px;padding:10px 14px}
+    header .spacer{flex-basis:100%;height:0;order:5}
+    .clock{display:none}
+    .powered{font-size:10px}
+    aside{flex-direction:row;align-items:center;gap:6px;overflow-x:auto;overflow-y:hidden;
+          border-right:0;border-bottom:1px solid var(--line);padding:8px 10px;
+          position:sticky;top:0;z-index:30;-webkit-overflow-scrolling:touch}
+    aside .navlabel,aside .aside-foot{display:none}
+    .nav{white-space:nowrap;padding:9px 13px;font-size:13px;flex:0 0 auto}
+    main{padding:18px 15px 46px;overflow:visible;height:auto}
+    .vhead h1{font-size:21px}
+    .cols2{grid-template-columns:1fr}
+  }
+  @media (max-width:560px){
+    .statline{grid-template-columns:repeat(2,1fr)!important}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .strat{grid-template-columns:1fr}
+    .pulse{display:none}
+    .vhead .asof{display:none}
+    table{min-width:540px}
+  }
+  .tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px}
+  .exbox{margin-top:12px;background:rgba(168,213,95,.10);border:1px solid rgba(168,213,95,.28);border-radius:12px;padding:13px 15px;font-size:12.5px;color:var(--mut);line-height:1.5}
+  .exbox .exh{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--lime);margin-bottom:6px}
+  .exbox b{color:var(--tx)}
 </style>
 </head>
 <body>
@@ -387,8 +417,8 @@ function vMarket(){
     <div><span class="pill2">${r.pill[state.lang]}</span><h4>${r[state.lang][0]} <span class="exta ext">↗</span></h4><p>${r[state.lang][1]}</p></div></div></a>`).join("");
   return `
    <div class="card"><h2>🛰 ${t('mk_deals')}</h2><div class="cap">${t('mk_dealscap')}</div>
-     <table><thead><tr><th>${t('th_co')}</th><th>${t('th_inv')}</th><th>${t('th_amt')}</th><th>${t('th_type')}</th><th>${t('th_date')}</th><th>${t('th_note')}</th></tr></thead>
-     <tbody>${rows}</tbody></table></div>
+     <div class="tscroll"><table><thead><tr><th>${t('th_co')}</th><th>${t('th_inv')}</th><th>${t('th_amt')}</th><th>${t('th_type')}</th><th>${t('th_date')}</th><th>${t('th_note')}</th></tr></thead>
+     <tbody>${rows}</tbody></table></div></div>
    <div class="cols2" style="margin-top:16px">
      <div class="card"><h2>🏛 ${t('mk_fund')}</h2><div class="cap">${t('mk_fundcap')}</div><div class="gridfund">${funds}</div></div>
      <div class="card"><h2>§ ${t('mk_reg')}</h2><div class="cap">${t('mk_regcap')}</div><div class="feed">${regs}</div></div>
@@ -560,6 +590,7 @@ function vCarb(){
         <p style="margin-bottom:10px"><b style="color:var(--tx)">${L?'1 · Indirect — ETS → prix du power':'1 · Indirect — ETS → power price'}</b><br>${L?`Qair ne reçoit pas d'EUA, mais un carbone cher relève le prix de gros via le merit order : chaque MWh vert se vend plus cher. Un EUA ~${cur} €/t soutient toute la courbe forward électricité.`:`Qair receives no EUAs, but expensive carbon lifts wholesale prices via the merit order: every green MWh sells higher. An EUA ~€${cur}/t supports the whole power forward curve.`}</p>
         <p><b style="color:var(--tx)">${L?'2 · Direct — attributs verts':'2 · Direct — green attributes'}</b><br>${L?`Garanties d'Origine (1 MWh = 1 GO, marché AIB) vendues aux fournisseurs/corporates ; en marchés émergents où Qair déplace un réseau fossile, crédits carbone volontaires (Verra / Gold Standard).`:`Guarantees of Origin (1 MWh = 1 GO, AIB market) sold to suppliers/corporates; in emerging markets where Qair displaces a fossil grid, voluntary carbon credits (Verra / Gold Standard).`}</p>
       </div>
+      <div class="exbox"><div class="exh">${L?'Exemple — pass-through ETS':'Example — ETS pass-through'}</div>${L?`Une centrale gaz marginale émet ~0,37 t CO₂/MWh. À ${cur} €/t, cela intègre ≈ <b>${Math.round(cur*0.37)} €/MWh</b> de coût carbone dans le prix de gros — capté par chaque MWh de Qair, sans aucune émission. Sensibilité : <b>+10 €/t ≈ +3,7 €/MWh</b> quand le gaz fixe le prix.`:`A marginal gas plant emits ~0.37 t CO₂/MWh. At €${cur}/t, that embeds ≈ <b>€${Math.round(cur*0.37)}/MWh</b> of carbon cost into the wholesale price — captured by every Qair MWh, with zero emissions. Sensitivity: <b>+€10/t ≈ +€3.7/MWh</b> when gas sets the price.`}</div>
       <div class="statline" style="grid-template-columns:1fr 1fr;margin-top:10px">
         ${sbox('~1–5 €', L?'GO (€/MWh, < 1 € proche)':'GO (€/MWh, < €1 near-dated)','--lime')}
         ${sbox('Verra', L?'crédits volontaires (émergents)':'voluntary credits (emerging)','--blue')}
