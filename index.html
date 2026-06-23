@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Qair Value Cockpit — Prototype · Powered by 3DT Consulting</title>
+<style>
+  :root{
+    --ink:#0A2F29; --ink2:#0E3A32; --panel:#103F35; --panel2:#0C362E;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+    --green:#1FA56B; --teal:#16A39A; --lime:#A8D55F; --blue:#5BB3D6; --amber:#E2B23C;
+    --tx:#EAF3EE; --mut:#9DB7AC; --mut2:#7C988C;
+    --serif:"Georgia","Cambria",serif; --sans:"Inter","Segoe UI","Helvetica Neue",Arial,sans-serif;
+    --up:#46D38A; --dn:#F0A35A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--ink);color:var(--tx);height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
+  .serif{font-family:var(--serif)}
+  button{font-family:inherit;cursor:pointer}
+
+  .app{display:grid;grid-template-columns:248px 1fr;grid-template-rows:62px 1fr;height:100vh}
+  /* HEADER */
+  header{grid-column:1/3;display:flex;align-items:center;gap:18px;padding:0 22px;background:var(--panel2);border-bottom:1px solid var(--line)}
+  .logo{display:flex;align-items:baseline;gap:10px}
+  .logo .q{font-weight:800;font-size:20px;letter-spacing:.02em;color:#fff}
+  .logo .vc{font-size:13px;color:var(--lime);font-weight:700;letter-spacing:.04em}
+  .pulse{margin-left:6px;display:inline-flex;align-items:center;gap:6px;font-size:10.5px;color:#8FE6B8;font-weight:700;letter-spacing:.08em;border:1px solid rgba(70,211,138,.3);padding:3px 9px;border-radius:999px}
+  .pdot{width:7px;height:7px;border-radius:50%;background:#46D38A;animation:blink 1.6s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+  .spacer{flex:1}
+  .clock{font-variant-numeric:tabular-nums;color:var(--mut);font-size:12.5px;letter-spacing:.03em}
+  .lang{display:flex;border:1px solid var(--line2);border-radius:999px;overflow:hidden}
+  .lang button{background:transparent;color:var(--mut);border:0;padding:6px 13px;font-size:12px;font-weight:700}
+  .lang button.on{background:var(--lime);color:#0A2F29}
+  .powered{font-size:11px;color:var(--mut2)}
+  .powered b{color:var(--tx);font-weight:700}
+
+  /* SIDEBAR */
+  aside{background:var(--panel2);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
+  .navlabel{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut2);padding:10px 12px 6px}
+  .nav{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;color:var(--mut);font-size:13.5px;font-weight:600;border:1px solid transparent;transition:.15s;background:transparent;width:100%;text-align:left}
+  .nav:hover{background:rgba(255,255,255,.04);color:var(--tx)}
+  .nav.on{background:rgba(168,213,95,.12);color:#fff;border-color:rgba(168,213,95,.3)}
+  .nav .gi{width:20px;text-align:center;font-size:15px}
+  .nav .badge{margin-left:auto;font-size:10px;background:var(--lime);color:#0A2F29;font-weight:800;border-radius:999px;padding:1px 7px}
+  .aside-foot{margin-top:auto;padding:12px;font-size:10.5px;color:var(--mut2);line-height:1.5;border-top:1px solid var(--line)}
+
+  /* MAIN */
+  main{overflow-y:auto;padding:26px 30px 60px}
+  .view{display:none;animation:fade .35s ease}
+  .view.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .vhead{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+  .vhead h1{font-family:var(--serif);font-size:25px;font-weight:700;color:#fff}
+  .vhead .sub{color:var(--mut);font-size:13.5px;margin-top:4px}
+  .vhead .asof{font-size:11.5px;color:var(--mut2)}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;transition:.18s;cursor:pointer}
+  .kpi:hover{border-color:var(--line2);transform:translateY(-2px)}
+  .kpi .t{display:flex;align-items:center;justify-content:space-between}
+  .kpi .nm{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+  .kpi .ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+  .kpi h3{font-family:var(--serif);font-size:16px;color:#fff;margin:9px 0 2px;font-weight:700}
+  .kpi .d{color:var(--mut);font-size:11.5px;min-height:30px}
+  .kpi .m{display:flex;align-items:baseline;gap:8px;margin-top:8px}
+  .kpi .big{font-family:var(--serif);font-size:25px;color:#fff;font-weight:700}
+  .kpi .chg{font-size:11.5px;font-weight:700}
+  .up{color:var(--up)} .dn{color:var(--dn)}
+
+  .cols2{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;margin-top:16px}
+  @media(max-width:1000px){.cols2{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card h2{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--tx);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+  .card .cap{color:var(--mut);font-size:12px;margin-bottom:14px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--mut);margin-top:10px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;color:var(--mut2);font-weight:700;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--line)}
+  td{padding:11px 10px;border-bottom:1px solid var(--line);color:var(--tx);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  tr:hover td{background:rgba(255,255,255,.025)}
+  .co{font-weight:700;color:#fff}
+  .tag{display:inline-block;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;letter-spacing:.04em}
+  .tag.ma{background:rgba(91,179,214,.16);color:#9AD4ED}
+  .tag.eq{background:rgba(168,213,95,.16);color:var(--lime)}
+  .tag.debt{background:rgba(226,178,60,.16);color:#F0CE7E}
+  .amt{font-family:var(--serif);font-weight:700;color:#fff;white-space:nowrap}
+  .src{font-size:10px;color:var(--mut2)}
+
+  .feed{display:flex;flex-direction:column;gap:0}
+  .fitem{display:grid;grid-template-columns:78px 1fr;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+  .fitem:last-child{border-bottom:0}
+  .fdate{font-size:11px;color:var(--lime);font-weight:700;padding-top:2px}
+  .fitem h4{font-size:13px;color:#fff;margin-bottom:3px}
+  .fitem p{font-size:12px;color:var(--mut);line-height:1.45}
+  .pill2{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--mut2);border:1px solid var(--line2);border-radius:999px;padding:1px 8px;margin-bottom:5px}
+
+  .gridfund{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(max-width:760px){.gridfund{grid-template-columns:1fr}}
+  .fund{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .fund .fb{font-family:var(--serif);font-size:22px;color:var(--lime);font-weight:700}
+  .fund .fl{font-size:12px;color:#fff;font-weight:700;margin:2px 0 4px}
+  .fund .fd{font-size:11.5px;color:var(--mut)}
+
+  .statline{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
+  @media(max-width:760px){.statline{grid-template-columns:1fr}}
+  .sbox{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .sbox .sb{font-family:var(--serif);font-size:30px;color:#fff;font-weight:700;line-height:1}
+  .sbox .sl{font-size:11.5px;color:var(--mut);margin-top:6px}
+
+  .gaugewrap{display:flex;align-items:center;gap:18px;margin-top:6px}
+  .barbg{flex:1;height:12px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
+  .barfill{height:100%;border-radius:999px}
+
+  .note{margin-top:18px;font-size:11px;color:var(--mut2);border-top:1px solid var(--line);padding-top:12px;line-height:1.6}
+  a.srclink{display:block;text-decoration:none;color:inherit;border-radius:12px;transition:.15s}
+  a.srclink:hover{background:rgba(22,163,154,.08);outline:1px solid var(--line2)}
+  a.exta{color:var(--teal);text-decoration:none;font-weight:700;white-space:nowrap}
+  a.exta:hover{text-decoration:underline}
+  tr.lk{cursor:pointer}
+  tr.lk:hover td{background:rgba(22,163,154,.07)}
+  .srcchip{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--teal);border:1px solid var(--line2);border-radius:999px;padding:6px 13px;text-decoration:none;margin-top:14px}
+  .srcchip:hover{background:rgba(22,163,154,.12)}
+  .ext{font-size:10px;opacity:.85}
+  .chartbox{width:100%}
+  svg text{font-family:var(--sans)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo"><span class="q">QAIR</span><span class="vc">Value Cockpit</span>
+      <span class="pulse"><span class="pdot"></span><span data-i18n="live">DONNÉES EN DIRECT</span></span>
+    </div>
+    <div class="spacer"></div>
+    <span class="clock" id="clock">—</span>
+    <div class="lang">
+      <button id="fr" class="on" onclick="setLang('fr')">FR</button>
+      <button id="en" onclick="setLang('en')">EN</button>
+    </div>
+    <span class="powered" data-i18n="powered">Powered by <b>3DT Consulting</b></span>
+  </header>
+
+  <aside id="aside"></aside>
+  <main id="main"></main>
+</div>
+
+<script>
+/* ============ DATA (sourced, 2025–2026) ============ */
+const DEALS = [
+  {co:"Boralex", inv:"Brookfield & La Caisse", amt:"$6.1bn", type:"ma", date:"2026",
+   fr:"Retrait de la cote ; plateforme IPP repassée en mains privées.",
+   en:"Take-private; public IPP converted to a privately funded platform.",
+   src:"FTI Consulting", url:"https://www.fticonsulting.com/insights/articles/power-renewables-energy-transition-2025-ma-year-review-2026-outlook"},
+  {co:"Eurowind Energy", inv:"Blackstone", amt:"€2.0bn", type:"eq", date:"Apr 2026",
+   fr:"Prise de participation de 24,7 % ; portefeuille éolien/solaire/stockage dans 16 marchés.",
+   en:"24.7% stake; wind/solar/storage portfolio across 16 markets.",
+   src:"CarbonCredits", url:"https://carboncredits.com/blackstone-bets-e2b-on-eurowind-as-europes-renewable-energy-boom-meets-ai-driven-power-surge/"},
+  {co:"Renalfa IPP", inv:"BERD / EBRD", amt:"€70m", type:"debt", date:"2026",
+   fr:"Prêt (paquet €210m) : 450 MW solaire + 250 MW/1 GWh stockage (Hongrie).",
+   en:"Loan (within €210m package): 450 MW solar + 250 MW/1 GWh storage (Hungary).",
+   src:"EBRD", url:"https://www.ebrd.com/home/news-and-events/news/2026/ebrd-finances-landmark-solar-and-battery-project-in-hungary.html"},
+  {co:"Altea Green Power", inv:"NB5 S.r.l.", amt:"€17m", type:"ma", date:"May 2026",
+   fr:"Rachat d'une centrale PV de 16,75 MW en exploitation (Italie).",
+   en:"Acquisition of a 16.75 MW operational PV plant (Italy).",
+   src:"Megaproject", url:"https://megaproject.com/news/powerplant/italy-solar-m-a-shifts-toward-ipp-owned-incentivised-assets"},
+];
+const FUNDS = [
+  {b:">€75bn", url:"https://energy.ec.europa.eu/topics/funding-and-financing/clean-energy-investment_en",
+   fr:["Stratégie UE énergie propre","Financement BEI sur 3 ans (adoptée mars 2026)."],
+   en:["EU Clean Energy Strategy","EIB financing over 3 years (adopted March 2026)."]},
+  {b:"€23bn", url:"https://www.energy-pedia.com/news/italy/european-commission-approves-%E2%82%AC23-billion-italian-renewable-energy-support-scheme-204247",
+   fr:["Italie — schéma de soutien","Dispositif renouvelables approuvé par la Commission."],
+   en:["Italy — support scheme","Renewables scheme approved by the Commission."]},
+  {b:"10 GW", url:"https://www.economie.gouv.fr/actualites/lancement-dappels-doffres-sur-les-energies-renouvelables",
+   fr:["France — PPE3","Éolien offshore lancé (avr. 2026) ; premiers lauréats fin 2026-27."],
+   en:["France — PPE3","Offshore wind launched (Apr 2026); first winners late 2026-27."]},
+  {b:"925 MW", url:"https://www.economie.gouv.fr/actualites/lancement-dappels-doffres-sur-les-energies-renouvelables",
+   fr:["France — solaire au sol","Appel d'offres juillet 2026 ; +288 MWc toitures (PPE3)."],
+   en:["France — ground-mounted solar","July 2026 tender; +288 MWc rooftops (PPE3)."]},
+];
+const REGS = [
+  {d:"2026", pill:{fr:"Marché",en:"Market"}, url:"https://www.consilium.europa.eu/en/policies/electricity-market-reform/",
+   fr:["Réforme du market design UE — en vigueur","Contrats long terme PPA/CfD pleinement applicables ; transposition Allemagne d'ici juillet 2026."],
+   en:["EU Electricity Market Design Reform — in force","Long-term PPA/CfD contracts fully applicable; Germany transposes by July 2026."]},
+  {d:"Jun 2026", pill:{fr:"Carbone",en:"Carbon"}, url:"https://climate.ec.europa.eu/eu-action/carbon-markets/about-eu-ets_en",
+   fr:["EU ETS ~80 €/t","Marché carbone européen ; arbitrable selon le timing et la bourse."],
+   en:["EU ETS ~€80/t","European carbon market; tradable by timing and exchange."]},
+  {d:"2027", pill:{fr:"Carbone",en:"Carbon"}, url:"https://climate.ec.europa.eu/eu-action/carbon-markets/about-eu-ets_en",
+   fr:["ETS2 opérationnel","Bâtiments et transport routier intègrent un marché carbone dédié."],
+   en:["ETS2 goes live","Buildings and road transport enter a dedicated carbon market."]},
+  {d:"Jul 2026", pill:{fr:"Actifs",en:"Assets"}, url:"https://www.esma.europa.eu/esmas-activities/digital-finance-and-innovation/markets-crypto-assets-regulation-mica",
+   fr:["MiCA — actifs tokenisés","Fin de la période transitoire (1er juil. 2026) ; cadre des stablecoins régulés."],
+   en:["MiCA — tokenized assets","Transitional period ends (1 Jul 2026); framework for regulated stablecoins."]},
+];
+const CURVE = [{x:"Spot",v:72},{x:"M+1",v:78},{x:"Q+1",v:84},{x:"Cal+1",v:91},{x:"Cal+2",v:95}];
+const EUA = [74,77,76,79,81,80,82,80];
+const INSTR = {
+  trade:{fr:"Source : EEX — marché des futures électricité",en:"Source: EEX — power futures market", url:"https://www.eex.com/en/market-data/power"},
+  carb:{fr:"Source : EU ETS — Commission européenne",en:"Source: EU ETS — European Commission", url:"https://climate.ec.europa.eu/eu-action/carbon-markets/about-eu-ets_en"},
+  treas:{fr:"Source : BRI — essor des fonds monétaires tokenisés",en:"Source: BIS — the rise of tokenised money market funds", url:"https://www.bis.org/publ/bisbull115.pdf"},
+};
+
+/* ============ I18N ============ */
+const T = {
+  fr:{
+    live:"DONNÉES EN DIRECT", powered:'Powered by <b>3DT Consulting</b>',
+    navmain:"Cockpit", navtools:"Cadrans",
+    n_over:"Vue d'ensemble", n_mkt:"Veille de marché", n_trade:"Trading électricité", n_carb:"Carbone", n_treas:"Offtake & trésorerie",
+    asfoot:"Prototype de démonstration.<br>Données réelles 2025-2026, sourcées.<br>© 3DT Consulting",
+    asof:"Au 23 juin 2026 · prototype",
+    demo:"Prototype — données réelles agrégées à titre de démonstration ; les indicateurs propres à Qair seront connectés lors du déploiement.",
+    // overview
+    ov_h:"Vue d'ensemble", ov_s:"Les quatre cadrans qui pilotent la valeur de la chaîne intégrée.",
+    k_mkt_nm:"Marché & pairs", k_mkt_h:"Positionnement", k_mkt_d:"Rang parmi les IPP indépendants suivis.", k_mkt_chg:"▲ 2 rangs",
+    k_tr_nm:"Trading", k_tr_h:"Courbe des futures", k_tr_d:"Écart capté Cal+2 vs spot.", k_tr_chg:"/MWh",
+    k_cb_nm:"Carbone", k_cb_h:"EUA", k_cb_d:"Prix de la tonne de CO₂ (juin 2026).", k_cb_chg:"/t · volatil",
+    k_tz_nm:"Trésorerie", k_tz_h:"Rendement", k_tz_d:"Trésorerie tokenisée, liquidité same-day.", k_tz_chg:"rendement",
+    ov_sig:"Signaux récents", ov_sigcap:"Mouvements de marché à fort impact — extrait de la veille.",
+    ov_snap:"Synthèse de valeur", ov_snapcap:"Là où se loge la valeur activable, aujourd'hui.",
+    // market
+    mk_h:"Veille de marché", mk_s:"Concurrents, levées de capitaux et réglementation — agrégés en continu.",
+    mk_deals:"Concurrents & opérations", mk_dealscap:"Mouvements capitalistiques des pairs et plateformes IPP.",
+    th_co:"Société", th_inv:"Investisseur / cible", th_amt:"Montant", th_type:"Type", th_date:"Date", th_note:"Lecture",
+    mk_fund:"Financements publics & programmes", mk_fundcap:"Capitaux et volumes ouverts par les pouvoirs publics.",
+    mk_reg:"Veille réglementaire", mk_regcap:"Ce qui change les règles du jeu — et le calendrier.",
+    t_ma:"M&A", t_eq:"Equity", t_debt:"Dette",
+    // trading
+    tr_h:"Trading électricité", tr_s:"Capter la valeur temporelle des kWh le long de la courbe des futures.",
+    tr_curve:"Courbe des futures (€/MWh)", tr_curvecap:"Prix forward par échéance — exemple de marché.",
+    tr_capt:"Valeur captable", tr_captl:"en vendant Cal+2 plutôt qu'au comptant",
+    tr_box1:"Spot", tr_box1l:"prix au comptant", tr_box2:"Cal+2", tr_box2l:"forward 2 ans", tr_box3:"+32%", tr_box3l:"écart de courbe",
+    tr_note:"Lecture : vendre au bon point de la courbe plutôt qu'au comptant capte un gain sans produire un kWh de plus. Données illustratives de marché.",
+    // carbon
+    cb_h:"Carbone", cb_s:"Valoriser et arbitrer EUA et crédits, au bon moment et sur la bonne bourse.",
+    cb_price:"EUA — prix de la tonne (€/t)", cb_pricecap:"Tendance récente — marché EU ETS.",
+    cb_b1:"~80 €", cb_b1l:"EUA, juin 2026", cb_b2:"ETS2", cb_b2l:"opérationnel 2027", cb_b3:"UE–R.-U.", cb_b3l:"liaison en discussion",
+    cb_note:"Un actif volatil et arbitrable : le timing et le lieu de vente créent une valeur souvent laissée sur la table.",
+    // treasury
+    tz_h:"Offtake & trésorerie", tz_s:"Faire travailler chaque MWh captif et chaque euro de trésorerie.",
+    tz_alloc:"Allocation de trésorerie (exemple)", tz_alloccap:"Du cash dormant vers une trésorerie tokenisée liquide.",
+    tz_b1:"4–4,8%", tz_b1l:"rendement, liquidité same-day", tz_b2:">7 Md$", tz_b2l:"encours trésoreries tokenisées", tz_b3:"64%", tz_b3l:"cash mobilisable optimisé",
+    tz_idle:"Cash dormant optimisé", tz_idlel:"Part du cash entre financial close et capex placée en trésorerie tokenisée.",
+    tz_off:"Offtake captif", tz_offcap:"Data center captif en alternative au mining — un débouché stable pour les excédents.",
+    tz_note:"Trésorerie tokenisée = rendement sans renoncer à la disponibilité. 3DT note et sélectionne les solutions ; les décisions restent les vôtres.",
+    deal0:"Retrait de la cote ; plateforme IPP repassée en mains privées.",
+  },
+  en:{
+    live:"LIVE DATA", powered:'Powered by <b>3DT Consulting</b>',
+    navmain:"Cockpit", navtools:"Dials",
+    n_over:"Overview", n_mkt:"Market intelligence", n_trade:"Power trading", n_carb:"Carbon", n_treas:"Offtake & treasury",
+    asfoot:"Demonstration prototype.<br>Real 2025-2026 data, sourced.<br>© 3DT Consulting",
+    asof:"As of 23 June 2026 · prototype",
+    demo:"Prototype — real aggregated data shown for demonstration; Qair-specific metrics will be connected at deployment.",
+    ov_h:"Overview", ov_s:"The four dials that steer the value of the integrated chain.",
+    k_mkt_nm:"Market & peers", k_mkt_h:"Positioning", k_mkt_d:"Rank among tracked independent IPPs.", k_mkt_chg:"▲ 2 ranks",
+    k_tr_nm:"Trading", k_tr_h:"Futures curve", k_tr_d:"Spread captured Cal+2 vs spot.", k_tr_chg:"/MWh",
+    k_cb_nm:"Carbon", k_cb_h:"EUA", k_cb_d:"Price per tonne of CO₂ (June 2026).", k_cb_chg:"/t · volatile",
+    k_tz_nm:"Treasury", k_tz_h:"Yield", k_tz_d:"Tokenized treasury, same-day liquidity.", k_tz_chg:"yield",
+    ov_sig:"Recent signals", ov_sigcap:"High-impact market moves — from the intelligence feed.",
+    ov_snap:"Value snapshot", ov_snapcap:"Where actionable value sits, today.",
+    mk_h:"Market intelligence", mk_s:"Competitors, capital raises and regulation — aggregated continuously.",
+    mk_deals:"Competitors & transactions", mk_dealscap:"Peer capital moves and IPP platforms.",
+    th_co:"Company", th_inv:"Investor / target", th_amt:"Amount", th_type:"Type", th_date:"Date", th_note:"Read",
+    mk_fund:"Public funding & programs", mk_fundcap:"Capital and volumes opened by public authorities.",
+    mk_reg:"Regulatory watch", mk_regcap:"What changes the rules — and the calendar.",
+    t_ma:"M&A", t_eq:"Equity", t_debt:"Debt",
+    tr_h:"Power trading", tr_s:"Capture the time value of kWh along the futures curve.",
+    tr_curve:"Futures curve (€/MWh)", tr_curvecap:"Forward price by maturity — market example.",
+    tr_capt:"Capturable value", tr_captl:"selling Cal+2 rather than spot",
+    tr_box1:"Spot", tr_box1l:"spot price", tr_box2:"Cal+2", tr_box2l:"2-yr forward", tr_box3:"+32%", tr_box3l:"curve spread",
+    tr_note:"Read: selling at the right point on the curve rather than spot captures a gain without producing a single extra kWh. Illustrative market data.",
+    cb_h:"Carbon", cb_s:"Value and arbitrage EUAs and credits, at the right time and on the right exchange.",
+    cb_price:"EUA — price per tonne (€/t)", cb_pricecap:"Recent trend — EU ETS market.",
+    cb_b1:"~€80", cb_b1l:"EUA, June 2026", cb_b2:"ETS2", cb_b2l:"live 2027", cb_b3:"EU–UK", cb_b3l:"linkage in discussion",
+    cb_note:"A volatile, tradable asset: when and where you sell creates value often left on the table.",
+    tz_h:"Offtake & treasury", tz_s:"Make every captive MWh and every euro of treasury work.",
+    tz_alloc:"Treasury allocation (example)", tz_alloccap:"From idle cash to liquid tokenized treasury.",
+    tz_b1:"4–4.8%", tz_b1l:"yield, same-day liquidity", tz_b2:">$7bn", tz_b2l:"tokenized treasury AUM", tz_b3:"64%", tz_b3l:"mobilizable cash optimized",
+    tz_idle:"Idle cash optimized", tz_idlel:"Share of cash between financial close and capex placed in tokenized treasury.",
+    tz_off:"Captive offtake", tz_offcap:"A captive data center as an alternative to mining — a stable outlet for surplus output.",
+    tz_note:"Tokenized treasury = yield without giving up availability. 3DT rates and selects the solutions; decisions remain yours.",
+  }
+};
+
+let state={lang:"fr", view:"over"};
+const NAV=[["over","n_over","◎"],["mkt","n_mkt","🛰"],["trade","n_trade","⌁"],["carb","n_carb","❖"],["treas","n_treas","▤"]];
+
+function t(k){return T[state.lang][k]||k;}
+
+/* ---------- charts (inline SVG) ---------- */
+function lineChart(data, color, w=520, h=210, fill=true, unit=""){
+  const pad={l:36,r:14,t:14,b:26};
+  const vals=data.map(d=>d.v!==undefined?d.v:d);
+  const max=Math.max(...vals)*1.06, min=Math.min(...vals)*0.92;
+  const iw=w-pad.l-pad.r, ih=h-pad.t-pad.b;
+  const X=i=>pad.l+(iw*i/(vals.length-1));
+  const Y=v=>pad.t+ih-((v-min)/(max-min))*ih;
+  let pts=vals.map((v,i)=>`${X(i)},${Y(v)}`).join(" ");
+  let area=`${pad.l},${pad.t+ih} `+pts+` ${X(vals.length-1)},${pad.t+ih}`;
+  let grid="";
+  for(let g=0;g<=3;g++){const yy=pad.t+ih*g/3;const vv=(max-(max-min)*g/3);
+    grid+=`<line x1="${pad.l}" y1="${yy}" x2="${w-pad.r}" y2="${yy}" stroke="rgba(255,255,255,.08)" stroke-width="1"/>`;
+    grid+=`<text x="${pad.l-6}" y="${yy+3}" text-anchor="end" font-size="9" fill="#7C988C">${Math.round(vv)}</text>`;}
+  let labs=data.map((d,i)=>`<text x="${X(i)}" y="${h-8}" text-anchor="middle" font-size="9.5" fill="#9DB7AC">${d.x!==undefined?d.x:""}</text>`).join("");
+  let dots=vals.map((v,i)=>`<circle cx="${X(i)}" cy="${Y(v)}" r="3" fill="${color}"/>`).join("");
+  return `<svg viewBox="0 0 ${w} ${h}" class="chartbox" preserveAspectRatio="xMidYMid meet">
+    ${grid}
+    ${fill?`<polygon points="${area}" fill="${color}" opacity="0.12"/>`:""}
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"/>
+    ${dots}${labs}</svg>`;
+}
+
+/* ---------- view renderers ---------- */
+function vOverview(){
+  const k=(nm,ic,col,h,big,chg,cls,d)=>`<div class="kpi" onclick="go('${nm[0]}')">
+    <div class="t"><span class="nm" style="color:${col}">${t(nm[1])}</span>
+    <span class="ic" style="background:${col}22;color:${col}">${ic}</span></div>
+    <h3>${t(h)}</h3><div class="d">${t(d)}</div>
+    <div class="m"><span class="big">${big}</span><span class="chg ${cls}">${chg} ${t(nm[3]||'')}</span></div></div>`;
+  const kpis=`<div class="kpis">
+    ${k(['mkt','k_mkt_nm','',,'k_mkt_chg'],'🛰','#16A39A','k_mkt_h','#3','',`up`,'k_mkt_d')}
+    ${k(['trade','k_tr_nm','',,'k_tr_chg'],'⌁','#A8D55F','k_tr_h','+€23','',`up`,'k_tr_d')}
+    ${k(['carb','k_cb_nm','',,'k_cb_chg'],'❖','#1FA56B','k_cb_h','~€80','',`dn`,'k_cb_d')}
+    ${k(['treas','k_tz_nm','',,'k_tz_chg'],'▤','#5BB3D6','k_tz_h','4–4.8%','',`up`,'k_tz_d')}
+  </div>`;
+  const sig=DEALS.slice(0,4).map(d=>`<a class="srclink" href="${d.url}" target="_blank" rel="noopener"><div class="fitem"><div class="fdate">${d.date}</div>
+    <div><h4>${d.co} · <span style="color:var(--mut);font-weight:600">${d.inv}</span> <span class="amt" style="font-size:12px">${d.amt}</span> <span class="exta ext">↗</span></h4>
+    <p>${d[state.lang]}</p></div></div></a>`).join("");
+  const snap=`
+    <div class="statline" style="grid-template-columns:1fr">
+      ${sbox('+€23','/MWh','--lime')}${sbox('~€80','€/t EUA','--green')}${sbox('4–4.8%','yield','--blue')}
+    </div>`;
+  return `${kpis}
+   <div class="cols2">
+     <div class="card"><h2>${t('ov_sig')}</h2><div class="cap">${t('ov_sigcap')}</div><div class="feed">${sig}</div></div>
+     <div class="card"><h2>${t('ov_snap')}</h2><div class="cap">${t('ov_snapcap')}</div>
+       <div class="statline" style="grid-template-columns:1fr;gap:10px">
+        ${sbox('+€23',t('tr_captl'),'--lime')}${sbox('~€80 €/t',t('cb_b1l'),'--green')}${sbox('4–4.8%',t('tz_b1l'),'--blue')}
+       </div></div>
+   </div>
+   <div class="note">${t('demo')}</div>`;
+}
+function sbox(b,l,varc){return `<div class="sbox"><div class="sb" style="color:var(${varc})">${b}</div><div class="sl">${l}</div></div>`;}
+
+function vMarket(){
+  const rows=DEALS.map(d=>`<tr class="lk" onclick="window.open('${d.url}','_blank','noopener')">
+    <td class="co">${d.co}</td><td>${d.inv}</td><td class="amt">${d.amt}</td>
+    <td><span class="tag ${d.type}">${t('t_'+d.type)}</span></td><td>${d.date}</td>
+    <td>${d[state.lang]}<div class="src"><a class="exta" href="${d.url}" target="_blank" rel="noopener">${d.src} ↗</a></div></td></tr>`).join("");
+  const funds=FUNDS.map(f=>`<a class="srclink" href="${f.url}" target="_blank" rel="noopener"><div class="fund"><div class="fb">${f.b}</div>
+    <div class="fl">${f[state.lang][0]} <span class="exta ext">↗</span></div><div class="fd">${f[state.lang][1]}</div></div></a>`).join("");
+  const regs=REGS.map(r=>`<a class="srclink" href="${r.url}" target="_blank" rel="noopener"><div class="fitem"><div class="fdate">${r.d}</div>
+    <div><span class="pill2">${r.pill[state.lang]}</span><h4>${r[state.lang][0]} <span class="exta ext">↗</span></h4><p>${r[state.lang][1]}</p></div></div></a>`).join("");
+  return `
+   <div class="card"><h2>🛰 ${t('mk_deals')}</h2><div class="cap">${t('mk_dealscap')}</div>
+     <table><thead><tr><th>${t('th_co')}</th><th>${t('th_inv')}</th><th>${t('th_amt')}</th><th>${t('th_type')}</th><th>${t('th_date')}</th><th>${t('th_note')}</th></tr></thead>
+     <tbody>${rows}</tbody></table></div>
+   <div class="cols2" style="margin-top:16px">
+     <div class="card"><h2>🏛 ${t('mk_fund')}</h2><div class="cap">${t('mk_fundcap')}</div><div class="gridfund">${funds}</div></div>
+     <div class="card"><h2>§ ${t('mk_reg')}</h2><div class="cap">${t('mk_regcap')}</div><div class="feed">${regs}</div></div>
+   </div>
+   <div class="note">${t('demo')}</div>`;
+}
+function vTrade(){
+  return `<div class="cols2">
+    <div class="card"><h2>⌁ ${t('tr_curve')}</h2><div class="cap">${t('tr_curvecap')}</div>
+      ${lineChart(CURVE,'#A8D55F',560,230,true)}</div>
+    <div class="card"><h2>${t('tr_capt')}</h2><div class="cap">${t('tr_captl')}</div>
+      <div style="font-family:var(--serif);font-size:54px;color:var(--lime);font-weight:700;margin:18px 0 2px">+€23</div>
+      <div style="color:var(--mut);font-size:13px">€/MWh</div>
+      <div class="statline" style="grid-template-columns:1fr 1fr 1fr;margin-top:22px">
+        ${sbox(t('tr_box1')+' · €72',t('tr_box1l'),'--tx')}
+        ${sbox(t('tr_box2')+' · €95',t('tr_box2l'),'--lime')}
+        ${sbox(t('tr_box3'),t('tr_box3l'),'--teal')}
+      </div></div>
+  </div><div><a class="srcchip" href="${INSTR.trade.url}" target="_blank" rel="noopener">${INSTR.trade[state.lang]} ↗</a></div><div class="note">${t('tr_note')}</div>`;
+}
+function vCarb(){
+  const data=EUA.map((v,i)=>({x:'',v}));
+  return `<div class="cols2">
+    <div class="card"><h2>❖ ${t('cb_price')}</h2><div class="cap">${t('cb_pricecap')}</div>
+      ${lineChart(data,'#1FA56B',560,230,true)}</div>
+    <div class="card"><h2>EUA</h2><div class="cap">EU ETS</div>
+      <div style="font-family:var(--serif);font-size:54px;color:var(--green);font-weight:700;margin:18px 0 2px">~€80</div>
+      <div style="color:var(--mut);font-size:13px">${t('cb_b1l')}</div>
+      <div class="statline" style="grid-template-columns:1fr 1fr;margin-top:22px">
+        ${sbox(t('cb_b2'),t('cb_b2l'),'--amber')}
+        ${sbox(t('cb_b3'),t('cb_b3l'),'--blue')}
+      </div></div>
+  </div><div><a class="srcchip" href="${INSTR.carb.url}" target="_blank" rel="noopener">${INSTR.carb[state.lang]} ↗</a></div><div class="note">${t('cb_note')}</div>`;
+}
+function vTreas(){
+  const alloc=[["--blue",64],["--green",24],["--mut",12]];
+  let bars=`<div style="display:flex;height:16px;border-radius:999px;overflow:hidden;margin:8px 0 4px">
+     <div style="width:64%;background:var(--blue)"></div><div style="width:24%;background:var(--green)"></div><div style="width:12%;background:rgba(255,255,255,.18)"></div></div>
+     <div class="legend"><span><i style="background:var(--blue)"></i>Tokenized treasury 64%</span><span><i style="background:var(--green)"></i>MMF / T-bills 24%</span><span><i style="background:rgba(255,255,255,.3)"></i>Bank deposits 12%</span></div>`;
+  return `<div class="statline">
+      ${sbox(t('tz_b1'),t('tz_b1l'),'--blue')}${sbox(t('tz_b2'),t('tz_b2l'),'--green')}${sbox(t('tz_b3'),t('tz_b3l'),'--lime')}
+    </div>
+    <div class="cols2" style="margin-top:16px">
+      <div class="card"><h2>▤ ${t('tz_alloc')}</h2><div class="cap">${t('tz_alloccap')}</div>${bars}
+        <div style="margin-top:18px"><div style="font-size:12.5px;color:#fff;font-weight:700">${t('tz_idle')}</div>
+        <div class="cap" style="margin:6px 0 8px">${t('tz_idlel')}</div>
+        <div class="gaugewrap"><div class="barbg"><div class="barfill" style="width:64%;background:var(--blue)"></div></div><b style="color:var(--blue)">64%</b></div></div>
+      </div>
+      <div class="card"><h2>⚡ ${t('tz_off')}</h2><div class="cap">${t('tz_offcap')}</div>
+        <div style="display:flex;gap:14px;align-items:center;margin-top:14px">
+          <div style="font-family:var(--serif);font-size:40px;color:var(--lime);font-weight:700">100%</div>
+          <div style="font-size:12.5px;color:var(--mut)">${state.lang==='fr'?"des excédents redirigés vers un débouché captif et stable, sans dépendre de la volatilité d'un actif minier.":"of surplus output redirected to a stable captive outlet, without depending on a mining asset's volatility."}</div>
+        </div>
+      </div>
+    </div>
+    <div><a class="srcchip" href="${INSTR.treas.url}" target="_blank" rel="noopener">${INSTR.treas[state.lang]} ↗</a></div><div class="note">${t('tz_note')}</div>`;
+}
+const VIEWS={over:{h:'ov_h',s:'ov_s',f:vOverview},mkt:{h:'mk_h',s:'mk_s',f:vMarket},
+  trade:{h:'tr_h',s:'tr_s',f:vTrade},carb:{h:'cb_h',s:'cb_s',f:vCarb},treas:{h:'tz_h',s:'tz_s',f:vTreas}};
+
+/* ---------- shell render ---------- */
+function renderAside(){
+  let html=`<div class="navlabel">${t('navmain')}</div>`;
+  NAV.forEach((n,i)=>{
+    if(i===1) html+=`<div class="navlabel">${t('navtools')}</div>`;
+    const on=state.view===n[0]?'on':'';
+    const badge=n[0]==='mkt'?`<span class="badge">${DEALS.length}</span>`:'';
+    html+=`<button class="nav ${on}" onclick="go('${n[0]}')"><span class="gi">${n[2]}</span>${t(n[1])}${badge}</button>`;
+  });
+  html+=`<div class="aside-foot">${t('asfoot')}</div>`;
+  document.getElementById('aside').innerHTML=html;
+}
+function renderMain(){
+  const v=VIEWS[state.view];
+  document.getElementById('main').innerHTML=`<div class="view on">
+    <div class="vhead"><div><h1>${t(v.h)}</h1><div class="sub">${t(v.s)}</div></div>
+    <div class="asof">${t('asof')}</div></div>${v.f()}</div>`;
+}
+function renderHeader(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{el.innerHTML=t(el.getAttribute('data-i18n'));});
+}
+function go(view){state.view=view;renderAside();renderMain();}
+function setLang(l){state.lang=l;document.documentElement.lang=l;
+  document.getElementById('fr').classList.toggle('on',l==='fr');
+  document.getElementById('en').classList.toggle('on',l==='en');
+  renderHeader();renderAside();renderMain();}
+
+function tick(){const d=new Date();
+  document.getElementById('clock').textContent=d.toLocaleString(state.lang==='fr'?'fr-FR':'en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+' CET';}
+setInterval(tick,1000);tick();
+renderHeader();renderAside();renderMain();
+</script>
+</body>
+</html>
