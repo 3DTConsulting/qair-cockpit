@@ -147,23 +147,23 @@
   .kpi{position:relative}
   .kgo{position:absolute;right:14px;bottom:12px;color:var(--mut2);font-size:16px;font-weight:700}
   @media (max-width:820px){
-    body{height:auto;overflow-y:auto;overflow-x:hidden}
-    .app{display:block;height:auto;min-height:100vh}
-    header{flex-wrap:wrap;height:auto;gap:8px 12px;padding:10px 14px;position:sticky;top:0;z-index:40}
+    html,body{height:auto;min-height:0;overflow-x:hidden;overflow-y:visible}
+    .app{display:flex;flex-direction:column;height:auto;min-height:100vh}
+    header{flex-wrap:wrap;height:auto;gap:8px 12px;padding:10px 14px}
     header .spacer{display:none}
     .clock{display:none}
     .powered{font-size:10px;margin-left:auto}
-    aside{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:60;display:flex;flex-direction:row;gap:0;
-          padding:6px 6px calc(6px + env(safe-area-inset-bottom));background:var(--panel2);
-          border-right:0;border-top:1px solid var(--line2);box-shadow:0 -10px 26px rgba(0,0,0,.4);overflow:visible}
+    aside{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;
+          border-right:0;border-bottom:1px solid var(--line2);background:var(--panel2);
+          padding:6px;overflow:visible;box-shadow:0 6px 18px rgba(0,0,0,.28)}
     aside .navlabel,aside .aside-foot{display:none}
-    .nav{position:relative;flex:1 1 0;flex-direction:column;gap:3px;justify-content:center;align-items:center;
-         padding:7px 3px;border-radius:10px;font-size:9.5px;font-weight:700;line-height:1.05}
-    .nav .gi{font-size:19px;width:auto}
-    .nav .nlab{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
-    .nav .badge{position:absolute;top:1px;right:16%;margin:0;font-size:8px;padding:0 5px}
-    .nav.on{background:rgba(168,213,95,.16)}
-    main{padding:16px 14px calc(88px + env(safe-area-inset-bottom));overflow:visible;height:auto}
+    .nav{flex-direction:column;gap:3px;justify-content:center;align-items:center;text-align:center;
+         padding:7px 2px;border-radius:10px;font-size:9px;font-weight:700;line-height:1.05;min-width:0}
+    .nav .gi{font-size:18px;width:auto}
+    .nav .nlab{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .nav .badge{display:none}
+    .nav.on{background:rgba(168,213,95,.18)}
+    main{padding:16px 14px 44px;overflow:visible;height:auto}
     .vhead h1{font-size:21px}
     .cols2{grid-template-columns:1fr}
   }
@@ -173,9 +173,9 @@
     .strat{grid-template-columns:1fr}
     .pulse{display:none}
     .vhead .asof{display:none}
-    table{min-width:540px}
+    table{min-width:560px}
   }
-    .exbox{margin-top:12px;background:rgba(168,213,95,.10);border:1px solid rgba(168,213,95,.28);border-radius:12px;padding:13px 15px;font-size:12.5px;color:var(--mut);line-height:1.5}
+      .exbox{margin-top:12px;background:rgba(168,213,95,.10);border:1px solid rgba(168,213,95,.28);border-radius:12px;padding:13px 15px;font-size:12.5px;color:var(--mut);line-height:1.5}
   .exbox .exh{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--lime);margin-bottom:6px}
   .exbox b{color:var(--tx)}
 </style>
@@ -270,6 +270,7 @@ function datedSeries(vals,lang,everyN){const lab=monthsBack(vals.length,lang);re
 const EUA_HIST=[63,67,72,76,81,86,83,79,75,78,82,85,81,80];
 INSTR.carb={fr:"Sources : ICE, Bloomberg, Yahoo Finance — EUA",en:"Sources: ICE, Bloomberg, Yahoo Finance — EUA", url:"https://www.ice.com/products/197/EUA-Futures"};
 INSTR.go={fr:"Sources : AIB (Garanties d'Origine), Verra (crédits volontaires)",en:"Sources: AIB (Guarantees of Origin), Verra (voluntary credits)", url:"https://www.aib-net.org/"};
+INSTR.tscan={fr:"Source : 3DT Treasury Scanner · données émetteurs / RWA.xyz",en:"Source: 3DT Treasury Scanner · issuer data / RWA.xyz", url:"https://app.rwa.xyz/"};
 
 /* ============ I18N ============ */
 const T = {
@@ -622,10 +623,21 @@ function vCarb(){
 }
 
 function vTreas(){
-  const alloc=[["--blue",64],["--green",24],["--mut",12]];
-  let bars=`<div style="display:flex;height:16px;border-radius:999px;overflow:hidden;margin:8px 0 4px">
+  const L=state.lang==='fr';
+  const bars=`<div style="display:flex;height:16px;border-radius:999px;overflow:hidden;margin:8px 0 4px">
      <div style="width:64%;background:var(--blue)"></div><div style="width:24%;background:var(--green)"></div><div style="width:12%;background:rgba(255,255,255,.18)"></div></div>
      <div class="legend"><span><i style="background:var(--blue)"></i>Tokenized treasury 64%</span><span><i style="background:var(--green)"></i>MMF / T-bills 24%</span><span><i style="background:rgba(255,255,255,.3)"></i>Bank deposits 12%</span></div>`;
+  const TSOL=[
+    {n:"BUIDL",e:"BlackRock · Securitize",y:"4.5%",liq:"T+0",risk:1,esg:"A"},
+    {n:"BENJI",e:"Franklin Templeton",y:"4.4%",liq:"T+0",risk:1,esg:"A"},
+    {n:"OUSG",e:"Ondo Finance",y:"4.4%",liq:"T+0",risk:2,esg:"B"},
+    {n:"USYC",e:"Circle · Hashnote",y:"4.3%",liq:"T+0",risk:2,esg:"B"},
+    {n:"USTB",e:"Superstate",y:"4.5%",liq:"T+1",risk:2,esg:"B"},
+    {n:"OnChain",e:"Fidelity",y:"4.2%",liq:"T+0",risk:1,esg:"A"},
+  ];
+  const rk=(r)=>{const lab=(L?['','Faible','Modéré','Élevé']:['','Low','Medium','High'])[r];const c=r===1?'#46D38A':(r===2?'#E2B23C':'#F0A35A');return `<span style="display:inline-block;font-size:10px;font-weight:800;padding:2px 9px;border-radius:999px;background:${c}22;color:${c}">${lab}</span>`;};
+  const eg=(e)=>{const c=e==='A'?'#46D38A':(e==='B'?'#16A39A':'#E2B23C');return `<span style="display:inline-block;font-size:10px;font-weight:800;padding:2px 9px;border-radius:999px;background:${c}22;color:${c}">${e}</span>`;};
+  const rows=TSOL.map(s=>`<tr><td class="co">${s.n}</td><td>${s.e}</td><td class="amt">${s.y}</td><td>${s.liq}</td><td>${rk(s.risk)}</td><td>${eg(s.esg)}</td></tr>`).join('');
   return `<div class="statline">
       ${sbox(t('tz_b1'),t('tz_b1l'),'--blue')}${sbox(t('tz_b2'),t('tz_b2l'),'--green')}${sbox(t('tz_b3'),t('tz_b3l'),'--lime')}
     </div>
@@ -638,12 +650,20 @@ function vTreas(){
       <div class="card"><h2>⚡ ${t('tz_off')}</h2><div class="cap">${t('tz_offcap')}</div>
         <div style="display:flex;gap:14px;align-items:center;margin-top:14px">
           <div style="font-family:var(--serif);font-size:40px;color:var(--lime);font-weight:700">100%</div>
-          <div style="font-size:12.5px;color:var(--mut)">${state.lang==='fr'?"des excédents redirigés vers un débouché captif et stable, sans dépendre de la volatilité d'un actif minier.":"of surplus output redirected to a stable captive outlet, without depending on a mining asset's volatility."}</div>
+          <div style="font-size:12.5px;color:var(--mut)">${L?"des excédents redirigés vers un débouché captif et stable, sans dépendre de la volatilité d'un actif minier.":"of surplus output redirected to a stable captive outlet, without depending on a mining asset's volatility."}</div>
         </div>
       </div>
     </div>
-    <div><a class="srcchip" href="${INSTR.treas.url}" target="_blank" rel="noopener">${INSTR.treas[state.lang]} ↗</a></div><div class="note">${t('tz_note')}</div>`;
+    <div class="card" style="margin-top:16px">
+      <h2>◍ ${L?'Solutions de trésorerie tokenisée — notation 3DT':'Tokenized treasury solutions — 3DT rating'}</h2>
+      <div class="cap">${L?'Extrait du Treasury Scanner 3DT : rendement, liquidité, score de risque & ESG. Information, pas conseil.':'Excerpt from the 3DT Treasury Scanner: yield, liquidity, risk & ESG score. Information, not advice.'}</div>
+      <div class="tscroll"><table><thead><tr><th>Solution</th><th>${L?'Émetteur':'Issuer'}</th><th>${L?'Rendement':'Yield'}</th><th>${L?'Liquidité':'Liquidity'}</th><th>Risk</th><th>ESG</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="legend" style="margin-top:10px"><span>${L?'Risk : ':'Risk: '}<b style="color:#46D38A">${L?'Faible':'Low'}</b> · <b style="color:#E2B23C">${L?'Modéré':'Med'}</b> · <b style="color:#F0A35A">${L?'Élevé':'High'}</b></span><span>ESG : <b style="color:#46D38A">A</b> · <b style="color:#16A39A">B</b> · <b style="color:#E2B23C">C</b></span></div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><a class="srcchip" href="${INSTR.treas.url}" target="_blank" rel="noopener">${INSTR.treas[state.lang]} ↗</a><a class="srcchip" href="${INSTR.tscan.url}" target="_blank" rel="noopener">${INSTR.tscan[state.lang]} ↗</a></div>
+    <div class="note">${t('tz_note')}</div>`;
 }
+
 const VIEWS={over:{h:'ov_h',s:'ov_s',f:vOverview},mkt:{h:'mk_h',s:'mk_s',f:vMarket},
   trade:{h:'tr_h',s:'tr_s',f:vTrade},carb:{h:'cb_h',s:'cb_s',f:vCarb},treas:{h:'tz_h',s:'tz_s',f:vTreas}};
 
