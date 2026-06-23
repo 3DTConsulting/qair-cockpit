@@ -117,6 +117,18 @@
   .barbg{flex:1;height:12px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
   .barfill{height:100%;border-radius:999px}
 
+  .regime{font-size:11px;font-weight:800;letter-spacing:.06em;padding:3px 11px;border-radius:999px;margin-left:10px;vertical-align:middle}
+  .toggle{display:flex;border:1px solid var(--line2);border-radius:999px;overflow:hidden}
+  .toggle button{background:transparent;color:var(--mut);border:0;padding:7px 15px;font-size:11.5px;font-weight:700}
+  .toggle button.on{background:var(--lime);color:#0A2F29}
+  .strat{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+  @media(max-width:760px){.strat{grid-template-columns:1fr}}
+  .strat .st{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .strat .st h4{font-size:13.5px;color:#fff;margin:8px 0 4px}
+  .strat .st p{font-size:12px;color:var(--mut);line-height:1.45}
+  .imp{font-size:12px;color:var(--mut);line-height:1.55}
+  .imp ul{margin:8px 0 0 0;padding-left:18px}
+  .imp li{margin-bottom:6px}
   .note{margin-top:18px;font-size:11px;color:var(--mut2);border-top:1px solid var(--line);padding-top:12px;line-height:1.6}
   a.srclink{display:block;text-decoration:none;color:inherit;border-radius:12px;transition:.15s}
   a.srclink:hover{background:rgba(22,163,154,.08);outline:1px solid var(--line2)}
@@ -201,10 +213,26 @@ const REGS = [
 const CURVE = [{x:"Spot",v:72},{x:"M+1",v:78},{x:"Q+1",v:84},{x:"Cal+1",v:91},{x:"Cal+2",v:95}];
 const EUA = [74,77,76,79,81,80,82,80];
 const INSTR = {
-  trade:{fr:"Source : EEX — marché des futures électricité",en:"Source: EEX — power futures market", url:"https://www.eex.com/en/market-data/power"},
+  trade:{fr:"Sources : EEX, Bloomberg, Yahoo Finance — futures électricité",en:"Sources: EEX, Bloomberg, Yahoo Finance — power futures", url:"https://www.eex.com/en/market-data/power/futures"},
   carb:{fr:"Source : EU ETS — Commission européenne",en:"Source: EU ETS — European Commission", url:"https://climate.ec.europa.eu/eu-action/carbon-markets/about-eu-ets_en"},
   treas:{fr:"Source : BRI — essor des fonds monétaires tokenisés",en:"Source: BIS — the rise of tokenised money market funds", url:"https://www.bis.org/publ/bisbull115.pdf"},
 };
+INSTR.rates={fr:"Sources : BCE, Bloomberg, Yahoo Finance — taux EUR",en:"Sources: ECB, Bloomberg, Yahoo Finance — EUR rates", url:"https://www.ecb.europa.eu/stats/financial_markets_and_interest_rates/euro_area_yield_curves/html/index.en.html"};
+/* Power & rates analytics — illustrative last indicative close; connect to EEX/Bloomberg/Refinitiv & ECB at deployment */
+const PWR_CURVE=[{x:"Spot",v:82},{x:"Jul-26",v:86},{x:"Q3-26",v:89},{x:"Cal-27",v:92},{x:"Cal-28",v:95},{x:"Cal-29",v:96}];
+const PWR_HIST=[78,83,88,95,101,98,93,89,84,80,77,81,86,90,94,91,88,85,87,88,90,87,85,86];
+const SPREAD_HIST=[3,4,6,8,11,12,9,7,5,3,2,4,6,9,12,10,8,6,7,9,11,8,7,12];
+const RATES_CURVE=[{x:"\u20acSTR",v:2.20},{x:"3M",v:2.45},{x:"6M",v:2.52},{x:"2Y",v:2.58},{x:"5Y",v:2.78},{x:"10Y",v:3.00},{x:"30Y",v:3.18}];
+function _stats(a){const n=a.length,m=a.reduce((x,y)=>x+y,0)/n,v=a.reduce((x,y)=>x+(y-m)**2,0)/n;return{m,sd:Math.sqrt(v),min:Math.min(...a),max:Math.max(...a)};}
+function _annVol(p){let r=[];for(let i=1;i<p.length;i++)r.push(Math.log(p[i]/p[i-1]));return _stats(r).sd*Math.sqrt(52)*100;}
+function _pct(a,x){const q=[...a].sort((u,w)=>u-w);return Math.round(100*q.filter(v=>v<=x).length/q.length);}
+const _MFR=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+const _MEN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function monthsBack(n,lang){const a=lang==='fr'?_MFR:_MEN;const out=[];for(let i=n-1;i>=0;i--){const d=new Date(2026,5-i,1);out.push(a[d.getMonth()]+'-'+String(d.getFullYear()).slice(2));}return out;}
+function datedSeries(vals,lang,everyN){const lab=monthsBack(vals.length,lang);return vals.map((v,i)=>({x:(i%everyN===0||i===vals.length-1)?lab[i]:'',v}));}
+const EUA_HIST=[63,67,72,76,81,86,83,79,75,78,82,85,81,80];
+INSTR.carb={fr:"Sources : ICE, Bloomberg, Yahoo Finance — EUA",en:"Sources: ICE, Bloomberg, Yahoo Finance — EUA", url:"https://www.ice.com/products/197/EUA-Futures"};
+INSTR.go={fr:"Sources : AIB (Garanties d'Origine), Verra (crédits volontaires)",en:"Sources: AIB (Guarantees of Origin), Verra (voluntary credits)", url:"https://www.aib-net.org/"};
 
 /* ============ I18N ============ */
 const T = {
@@ -231,13 +259,13 @@ const T = {
     mk_reg:"Veille réglementaire", mk_regcap:"Ce qui change les règles du jeu — et le calendrier.",
     t_ma:"M&A", t_eq:"Equity", t_debt:"Dette",
     // trading
-    tr_h:"Trading électricité", tr_s:"Capter la valeur temporelle des kWh le long de la courbe des futures.",
+    tr_h:"Trading électricité", tr_s:"Structure de la courbe, régime contango/backwardation, variance, et stratégies selon la posture de Qair — courbe des taux en regard.",
     tr_curve:"Courbe des futures (€/MWh)", tr_curvecap:"Prix forward par échéance — exemple de marché.",
     tr_capt:"Valeur captable", tr_captl:"en vendant Cal+2 plutôt qu'au comptant",
     tr_box1:"Spot", tr_box1l:"prix au comptant", tr_box2:"Cal+2", tr_box2l:"forward 2 ans", tr_box3:"+32%", tr_box3l:"écart de courbe",
     tr_note:"Lecture : vendre au bon point de la courbe plutôt qu'au comptant capte un gain sans produire un kWh de plus. Données illustratives de marché.",
     // carbon
-    cb_h:"Carbone", cb_s:"Valoriser et arbitrer EUA et crédits, au bon moment et sur la bonne bourse.",
+    cb_h:"Carbone", cb_s:"Prix EUA daté, intérêt financier pour Qair (pass-through ETS, GOs, crédits) et stratégies de monétisation.",
     cb_price:"EUA — prix de la tonne (€/t)", cb_pricecap:"Tendance récente — marché EU ETS.",
     cb_b1:"~80 €", cb_b1l:"EUA, juin 2026", cb_b2:"ETS2", cb_b2l:"opérationnel 2027", cb_b3:"UE–R.-U.", cb_b3l:"liaison en discussion",
     cb_note:"Un actif volatil et arbitrable : le timing et le lieu de vente créent une valeur souvent laissée sur la table.",
@@ -270,12 +298,12 @@ const T = {
     mk_fund:"Public funding & programs", mk_fundcap:"Capital and volumes opened by public authorities.",
     mk_reg:"Regulatory watch", mk_regcap:"What changes the rules — and the calendar.",
     t_ma:"M&A", t_eq:"Equity", t_debt:"Debt",
-    tr_h:"Power trading", tr_s:"Capture the time value of kWh along the futures curve.",
+    tr_h:"Power trading", tr_s:"Curve structure, contango/backwardation regime, variance, and strategies tuned to Qair posture — rates curve alongside.",
     tr_curve:"Futures curve (€/MWh)", tr_curvecap:"Forward price by maturity — market example.",
     tr_capt:"Capturable value", tr_captl:"selling Cal+2 rather than spot",
     tr_box1:"Spot", tr_box1l:"spot price", tr_box2:"Cal+2", tr_box2l:"2-yr forward", tr_box3:"+32%", tr_box3l:"curve spread",
     tr_note:"Read: selling at the right point on the curve rather than spot captures a gain without producing a single extra kWh. Illustrative market data.",
-    cb_h:"Carbon", cb_s:"Value and arbitrage EUAs and credits, at the right time and on the right exchange.",
+    cb_h:"Carbon", cb_s:"Dated EUA price, Qair financial upside (ETS pass-through, GOs, credits) and monetization strategies.",
     cb_price:"EUA — price per tonne (€/t)", cb_pricecap:"Recent trend — EU ETS market.",
     cb_b1:"~€80", cb_b1l:"EUA, June 2026", cb_b2:"ETS2", cb_b2l:"live 2027", cb_b3:"EU–UK", cb_b3l:"linkage in discussion",
     cb_note:"A volatile, tradable asset: when and where you sell creates value often left on the table.",
@@ -288,7 +316,7 @@ const T = {
   }
 };
 
-let state={lang:"fr", view:"over"};
+let state={lang:"fr", view:"over", posture:"seller", euaView:"bull"};
 const NAV=[["over","n_over","◎"],["mkt","n_mkt","🛰"],["trade","n_trade","⌁"],["carb","n_carb","❖"],["treas","n_treas","▤"]];
 
 function t(k){return T[state.lang][k]||k;}
@@ -368,33 +396,193 @@ function vMarket(){
    <div class="note">${t('demo')}</div>`;
 }
 function vTrade(){
-  return `<div class="cols2">
-    <div class="card"><h2>⌁ ${t('tr_curve')}</h2><div class="cap">${t('tr_curvecap')}</div>
-      ${lineChart(CURVE,'#A8D55F',560,230,true)}</div>
-    <div class="card"><h2>${t('tr_capt')}</h2><div class="cap">${t('tr_captl')}</div>
-      <div style="font-family:var(--serif);font-size:54px;color:var(--lime);font-weight:700;margin:18px 0 2px">+€23</div>
-      <div style="color:var(--mut);font-size:13px">€/MWh</div>
-      <div class="statline" style="grid-template-columns:1fr 1fr 1fr;margin-top:22px">
-        ${sbox(t('tr_box1')+' · €72',t('tr_box1l'),'--tx')}
-        ${sbox(t('tr_box2')+' · €95',t('tr_box2l'),'--lime')}
-        ${sbox(t('tr_box3'),t('tr_box3l'),'--teal')}
-      </div></div>
-  </div><div><a class="srcchip" href="${INSTR.trade.url}" target="_blank" rel="noopener">${INSTR.trade[state.lang]} ↗</a></div><div class="note">${t('tr_note')}</div>`;
+  const L=state.lang==='fr';
+  const posture=state.posture||'seller';
+  const spot=PWR_CURVE[0].v, cal1=PWR_CURVE[3].v;
+  const slope=(cal1-spot)/spot*100;
+  const regime = slope>1.5?'contango':(slope<-1.5?'backwardation':'flat');
+  const vol=_annVol(PWR_HIST);
+  const ph=_stats(PWR_HIST), pctNow=_pct(PWR_HIST, PWR_HIST[PWR_HIST.length-1]);
+  const sh=_stats(SPREAD_HIST), z=(slope-sh.m)/sh.sd;
+  const r2=RATES_CURVE.find(d=>d.x==='2Y').v, r10=RATES_CURVE.find(d=>d.x==='10Y').v;
+  const slope2s10=(r10-r2)*100;
+  const regLabel = regime==='contango'?'CONTANGO':(regime==='backwardation'?'BACKWARDATION':(L?'PLATE':'FLAT'));
+  const regStyle = regime==='contango'?'background:rgba(168,213,95,.16);color:var(--lime)':(regime==='backwardation'?'background:rgba(240,163,90,.18);color:var(--dn)':'background:rgba(255,255,255,.1);color:var(--mut)');
+  const regText = regime==='contango'
+    ? (L?`Contango modéré (+${slope.toFixed(1)} % spot→Cal+1). Structure typique du marché électrique : prime de risque à terme et saisonnalité hivernale. Au-delà de ~15 %, signal de tension ; ici le marché n'est pas stressé.`
+        :`Mild contango (+${slope.toFixed(1)}% spot→Cal+1). Typical of power markets: a forward risk premium plus winter seasonality. Above ~15% would flag stress; here the market is not stressed.`)
+    : (L?`Backwardation (${slope.toFixed(1)} % spot→Cal+1) : le marché price une baisse ou une tension d'offre proche. Atypique et porteur d'opportunités d'arbitrage.`
+        :`Backwardation (${slope.toFixed(1)}% spot→Cal+1): the market prices a fall or near-term supply tightness. Atypical and rich in arbitrage opportunities.`);
+
+  let R=[];
+  const tg=(tag,h,b)=>R.push(`<div class="st"><span class="tag eq">${tag}</span><h4>${h}</h4><p>${b}</p></div>`);
+  if(regime!=='backwardation'){
+    if(posture==='seller'){
+      tg(L?`VERROUILLER`:`LOCK-IN`, L?`Vendre à terme Cal+1 / Cal+2`:`Sell forward Cal+1 / Cal+2`, L?`La prime de courbe (+${slope.toFixed(0)} %) récompense la vente à terme : cristallisez un prix supérieur au comptant.`:`The curve premium (+${slope.toFixed(0)}%) rewards forward selling: crystallize a price above spot.`);
+      tg(L?`COUVERTURE`:`HEDGE`, L?`Monter le ratio de couverture`:`Raise the hedge ratio`, L?`Sécuriser 60-80 % du volume sur 12-24 mois verrouille des revenus au-dessus du comptant.`:`Hedging 60-80% of volume over 12-24 months locks revenue above spot.`);
+      tg(`CARRY`, L?`Rouler les positions`:`Roll the positions`, L?`Capter le carry positif en roulant les ventes à terme d'échéance en échéance.`:`Capture positive carry by rolling forward sales maturity to maturity.`);
+      tg(`PPA / CfD`, L?`Adosser en long terme`:`Anchor long-term`, L?`Transformer la prime de courbe en PPA/CfD bancable, aligné sur la dette projet.`:`Convert the curve premium into a bankable PPA/CfD aligned with project debt.`);
+    } else {
+      tg(L?`VERROUILLER`:`LOCK-IN`, L?`Sécuriser le service de la dette`:`Secure debt service`, L?`Vendre à terme le volume couvrant les échéances de dette à un prix garanti.`:`Forward-sell the volume covering debt maturities at a guaranteed price.`);
+      tg(`LAYERING`, L?`Couverture par paliers`:`Layered hedging`, L?`Étager les ventes en tranches mensuelles pour lisser le prix moyen et réduire le risque de timing.`:`Layer sales in monthly tranches to smooth the average price and cut timing risk.`);
+      tg(`COLLAR`, L?`Collar / options`:`Collar / options`, L?`Volatilité élevée (~${vol.toFixed(0)} %/an) : un collar protège le plancher sans abandonner tout l'upside.`:`High volatility (~${vol.toFixed(0)}%/yr): a collar protects the floor without giving up all the upside.`);
+      tg(`PPA / CfD`, L?`Adossement actif-passif`:`Asset-liability matching`, L?`Aligner durée et prix du PPA/CfD sur la dette à taux fixe.`:`Match PPA/CfD tenor and price to fixed-rate debt.`);
+    }
+  } else {
+    if(posture==='seller'){
+      tg(`SPOT`, L?`Privilégier le court terme`:`Favor the short end`, L?`Forward < spot : vendre la production proche, différer les ventes long terme.`:`Forward < spot: sell near-term output, defer long-dated sales.`);
+      tg(L?`RACHAT`:`BUY-BACK`, L?`Racheter des forwards`:`Buy back forwards`, L?`Alléger les couvertures longues, rachetables à bon compte en backwardation.`:`Lighten long hedges, cheap to buy back under backwardation.`);
+      tg(L?`OPTIONNALITÉ`:`OPTIONALITY`, L?`Conserver du volume ouvert`:`Keep volume open`, L?`Garder de l'optionnalité si une tension d'offre proche est anticipée.`:`Keep optionality if near-term supply tightness is expected.`);
+      tg(`PPA / CfD`, L?`PPA opportuniste`:`Opportunistic PPA`, L?`N'engager du long terme que sur des niveaux jugés planchers.`:`Commit long-term only at levels judged to be a floor.`);
+    } else {
+      tg(L?`COURT`:`SHORT`, L?`Couvrir le proche uniquement`:`Hedge near-dated only`, L?`Concentrer la couverture sur les échéances proches, mieux valorisées.`:`Concentrate hedging on the better-priced near maturities.`);
+      tg(L?`DIFFÉRER`:`DEFER`, L?`Différer le hedge long`:`Defer long hedging`, L?`Attendre une normalisation de la courbe avant de fixer le long terme.`:`Wait for the curve to normalize before locking long-dated.`);
+      tg(`COLLAR`, L?`Plancher garanti`:`Guaranteed floor`, L?`Sécuriser un plancher de revenu pour le service de la dette via options.`:`Secure a revenue floor for debt service via options.`);
+      tg(`PPA / CfD`, L?`CfD bidirectionnel`:`Two-way CfD`, L?`Un CfD stabilise le revenu quel que soit le sens du marché.`:`A two-way CfD stabilizes revenue whichever way the market moves.`);
+    }
+  }
+  const cards=R.join('');
+
+  const imp = L?`<ul>
+      <li>Taux au plus haut pluriannuel — dépôt BCE <b>2,25 %</b> (+25 pb le 17 juin 2026), Bund 10 ans <b>~3,0 %</b>.</li>
+      <li>Courbe ascendante (2s10s +${slope2s10.toFixed(0)} pb) : le flottant court coûte moins cher mais expose au refinancement ; fixer le long terme verrouille un coût plus élevé mais certain.</li>
+      <li>Adossement actif-passif : associer dette long terme à taux fixe et revenus PPA/CfD — la prime de la courbe électricité aide à absorber un service de la dette renchéri.</li>
+      <li>Fenêtre de refinancement : anticiper via swaps payeurs / forward-starting si la BCE poursuit le resserrement.</li>
+    </ul>`:`<ul>
+      <li>Rates at multi-year highs — ECB deposit <b>2.25%</b> (+25bp on 17 Jun 2026), 10Y Bund <b>~3.0%</b>.</li>
+      <li>Upward curve (2s10s +${slope2s10.toFixed(0)}bp): short floating is cheaper but exposes to refinancing; fixing long-dated locks a higher but certain cost.</li>
+      <li>Asset-liability matching: pair long-dated fixed-rate debt with PPA/CfD revenue — the power-curve premium helps absorb a costlier debt service.</li>
+      <li>Refinancing window: pre-hedge via payer / forward-starting swaps if the ECB keeps tightening.</li>
+    </ul>`;
+
+  const histData=datedSeries(PWR_HIST, state.lang, 4);
+  const tgl=`<div class="toggle">
+    <button class="${posture==='seller'?'on':''}" onclick="setPosture('seller')">${L?'Vendeur net / revente':'Net seller / resale'}</button>
+    <button class="${posture==='hedge'?'on':''}" onclick="setPosture('hedge')">${L?'Couverture prioritaire':'Hedging priority'}</button>
+  </div>`;
+
+  return `
+  <div class="cols2">
+    <div class="card">
+      <h2>⌁ ${L?'Courbe des futures électricité':'Power futures curve'}<span class="regime" style="${regStyle}">${regLabel}</span></h2>
+      <div class="cap">${L?'Prix forward par échéance (baseload, €/MWh) — clôture indicative':'Forward price by maturity (baseload, €/MWh) — indicative close'}</div>
+      ${lineChart(PWR_CURVE,'#A8D55F',560,205,true)}
+      <div class="statline" style="grid-template-columns:1fr 1fr 1fr;margin-top:14px">
+        ${sbox('+'+slope.toFixed(1)+'%', L?'pente spot→Cal+1':'spot→Cal+1 slope','--lime')}
+        ${sbox(vol.toFixed(0)+'%', L?'volatilité annualisée':'annualized volatility','--teal')}
+        ${sbox(pctNow+'%', L?'percentile (24 m)':'percentile (24m)','--blue')}
+      </div>
+      <div class="imp" style="margin-top:12px">${regText}</div>
+    </div>
+    <div class="card">
+      <h2>§ ${L?'Courbe des taux EUR & financement':'EUR rates curve & financing'}</h2>
+      <div class="cap">${L?'Taux EUR par maturité (%) — BCE / marché':'EUR rates by maturity (%) — ECB / market'}</div>
+      ${lineChart(RATES_CURVE,'#5BB3D6',560,205,true)}
+      <div class="statline" style="grid-template-columns:1fr 1fr 1fr;margin-top:14px">
+        ${sbox('2.25%', L?'taux dépôt BCE':'ECB deposit rate','--blue')}
+        ${sbox('~3.0%', L?'Bund 10 ans':'10Y Bund','--teal')}
+        ${sbox('+'+slope2s10.toFixed(0)+(L?' pb':'bp'), '2s10s','--lime')}
+      </div>
+      <div class="imp" style="margin-top:12px"><b style="color:var(--tx)">${L?'Implications financement / refinancement':'Financing / refinancing implications'}</b>${imp}</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>📈 ${L?'Contexte historique & variance':'Historical context & variance'}</h2>
+    <div class="cap">${L?'Front-month, ~24 mois — moyenne, écart-type et position actuelle dans la distribution':'Front-month, ~24 months — mean, std-dev and current position in the distribution'}</div>
+    <div class="cols2">
+      <div>${lineChart(histData,'#A8D55F',560,185,true)}</div>
+      <div class="statline" style="grid-template-columns:1fr 1fr">
+        ${sbox('€'+ph.m.toFixed(0), L?'moyenne':'mean','--tx')}
+        ${sbox('±€'+ph.sd.toFixed(0), L?'écart-type':'std-dev','--teal')}
+        ${sbox('€'+ph.min+'–'+ph.max, L?'min–max':'min–max','--mut')}
+        ${sbox((z>=0?'+':'')+z.toFixed(1)+'σ', L?'z-score du spread':'spread z-score','--lime')}
+      </div>
+    </div>
+    <div class="imp" style="margin-top:10px">${L?`Le spread spot→Cal+1 ressort à ${(z>=0?'+':'')}${z.toFixed(1)} écart-type de sa moyenne historique — ${Math.abs(z)<1?'dans la norme':'tendu : fenêtre d\'arbitrage à terme'}.`:`The spot→Cal+1 spread sits ${(z>=0?'+':'')}${z.toFixed(1)} std-dev from its historical mean — ${Math.abs(z)<1?'within norm':'stretched: a forward arbitrage window'}.`}</div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div><h2 style="margin:0">♟ ${L?'Stratégies de trading & couverture':'Trading & hedging playbook'}</h2>
+      <div class="cap" style="margin:4px 0 0">${L?'Recommandations selon le régime de marché et la posture de Qair.':'Recommendations by market regime and Qair posture.'}</div></div>
+      ${tgl}
+    </div>
+    <div class="strat">${cards}</div>
+  </div>
+
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+    <a class="srcchip" href="${INSTR.trade.url}" target="_blank" rel="noopener">${INSTR.trade[state.lang]} ↗</a>
+    <a class="srcchip" href="${INSTR.rates.url}" target="_blank" rel="noopener">${INSTR.rates[state.lang]} ↗</a>
+  </div>
+  <div class="note">${L?'Données illustratives (dernière clôture indicative) — à connecter à un flux EEX / Bloomberg / Refinitiv et BCE en production. 3DT évalue et sélectionne ; les décisions de marché restent celles de Qair.':'Illustrative data (indicative last close) — to be connected to an EEX / Bloomberg / Refinitiv & ECB feed at deployment. 3DT evaluates and selects; market decisions remain Qair\'s.'}</div>`;
 }
+
 function vCarb(){
-  const data=EUA.map((v,i)=>({x:'',v}));
-  return `<div class="cols2">
-    <div class="card"><h2>❖ ${t('cb_price')}</h2><div class="cap">${t('cb_pricecap')}</div>
-      ${lineChart(data,'#1FA56B',560,230,true)}</div>
-    <div class="card"><h2>EUA</h2><div class="cap">EU ETS</div>
-      <div style="font-family:var(--serif);font-size:54px;color:var(--green);font-weight:700;margin:18px 0 2px">~€80</div>
-      <div style="color:var(--mut);font-size:13px">${t('cb_b1l')}</div>
-      <div class="statline" style="grid-template-columns:1fr 1fr;margin-top:22px">
-        ${sbox(t('cb_b2'),t('cb_b2l'),'--amber')}
-        ${sbox(t('cb_b3'),t('cb_b3l'),'--blue')}
-      </div></div>
-  </div><div><a class="srcchip" href="${INSTR.carb.url}" target="_blank" rel="noopener">${INSTR.carb[state.lang]} ↗</a></div><div class="note">${t('cb_note')}</div>`;
+  const L=state.lang==='fr';
+  const view=state.euaView||'bull';
+  const eua=_stats(EUA_HIST), eVol=_annVol(EUA_HIST), ePct=_pct(EUA_HIST,EUA_HIST[EUA_HIST.length-1]);
+  const cur=EUA_HIST[EUA_HIST.length-1];
+  const histData=datedSeries(EUA_HIST, state.lang, 3);
+
+  let R=[]; const tg=(t,h,b)=>R.push(`<div class="st"><span class="tag eq">${t}</span><h4>${h}</h4><p>${b}</p></div>`);
+  tg(L?`GARANTIES D'ORIGINE`:`GUARANTEES OF ORIGIN`, L?`Vendre les GOs (non bundlées)`:`Sell GOs (unbundled)`, L?`Chaque MWh vert porte une Garantie d'Origine monétisable auprès des fournisseurs et corporates (marché AIB), séparément de l'électron.`:`Each green MWh carries a Guarantee of Origin monetizable to suppliers and corporates (AIB market), separately from the electron.`);
+  if(view==='bull'){
+    tg(`ETS ↑`, L?`Capter le pic ETS`:`Capture the ETS peak`, L?`EUA élevé (~${cur} €/t) : il relève le prix de gros (vendez à terme, onglet Trading) et soutient la demande de GOs — monétisez une part maintenant.`:`High EUA (~€${cur}/t): it lifts wholesale prices (sell forward, Trading tab) and supports GO demand — monetize a share now.`);
+  } else {
+    tg(`ETS ↓`, L?`Sécuriser un plancher`:`Secure a floor`, L?`EUA en repli : couvrir une part du revenu carbone via forwards EUA / contrats GO pluriannuels, conserver le reste.`:`EUA softening: hedge part of carbon revenue via EUA forwards / multi-year GO contracts, hold the rest.`);
+  }
+  tg(L?`CRÉDITS VOLONTAIRES`:`VOLUNTARY CREDITS`, L?`Marchés émergents`:`Emerging markets`, L?`Là où Qair déplace un réseau fossile (Brésil, Afrique), les projets peuvent émettre des crédits (Verra / Gold Standard) — additionnalité réelle, valeur directe.`:`Where Qair displaces a fossil grid (Brazil, Africa), projects can issue credits (Verra / Gold Standard) — real additionality, direct value.`);
+  tg(L?`PPA VERT`:`GREEN PPA`, L?`Prime verte bundlée`:`Bundled green premium`, L?`Vendre électricité + GO ensemble à un corporate (RE100) capture une prime verte sur le PPA.`:`Selling power + GO bundled to a corporate (RE100) captures a green premium on the PPA.`);
+  const cards=R.join('');
+
+  const toggle=`<div class="toggle">
+    <button class="${view==='bull'?'on':''}" onclick="setEua('bull')">${L?'Marché EUA haussier':'EUA bullish'}</button>
+    <button class="${view==='bear'?'on':''}" onclick="setEua('bear')">${L?'EUA baissier':'EUA bearish'}</button>
+  </div>`;
+
+  return `
+  <div class="cols2">
+    <div class="card">
+      <h2>❖ ${L?'EUA — prix du carbone (€/t)':'EUA — carbon price (€/t)'}</h2>
+      <div class="cap">${L?'Historique mensuel — marché EU ETS (ICE / Bloomberg)':'Monthly history — EU ETS market (ICE / Bloomberg)'}</div>
+      ${lineChart(histData,'#1FA56B',560,205,true)}
+      <div class="statline" style="grid-template-columns:1fr 1fr 1fr;margin-top:14px">
+        ${sbox('~€'+cur, L?'dernier (juin 2026)':'last (June 2026)','--green')}
+        ${sbox(eVol.toFixed(0)+'%', L?'volatilité annualisée':'annualized volatility','--teal')}
+        ${sbox(ePct+'%', L?'percentile (période)':'percentile (period)','--blue')}
+      </div>
+    </div>
+    <div class="card">
+      <h2>${L?'Pourquoi le carbone rapporte à Qair':'Why carbon pays for Qair'}</h2>
+      <div class="cap">${L?'Deux canaux financiers, selon la nature du réseau alimenté.':'Two financial channels, depending on the grid supplied.'}</div>
+      <div class="imp">
+        <p style="margin-bottom:10px"><b style="color:var(--tx)">${L?'1 · Indirect — ETS → prix du power':'1 · Indirect — ETS → power price'}</b><br>${L?`Qair ne reçoit pas d'EUA, mais un carbone cher relève le prix de gros via le merit order : chaque MWh vert se vend plus cher. Un EUA ~${cur} €/t soutient toute la courbe forward électricité.`:`Qair receives no EUAs, but expensive carbon lifts wholesale prices via the merit order: every green MWh sells higher. An EUA ~€${cur}/t supports the whole power forward curve.`}</p>
+        <p><b style="color:var(--tx)">${L?'2 · Direct — attributs verts':'2 · Direct — green attributes'}</b><br>${L?`Garanties d'Origine (1 MWh = 1 GO, marché AIB) vendues aux fournisseurs/corporates ; en marchés émergents où Qair déplace un réseau fossile, crédits carbone volontaires (Verra / Gold Standard).`:`Guarantees of Origin (1 MWh = 1 GO, AIB market) sold to suppliers/corporates; in emerging markets where Qair displaces a fossil grid, voluntary carbon credits (Verra / Gold Standard).`}</p>
+      </div>
+      <div class="statline" style="grid-template-columns:1fr 1fr;margin-top:10px">
+        ${sbox('~1–5 €', L?'GO (€/MWh, < 1 € proche)':'GO (€/MWh, < €1 near-dated)','--lime')}
+        ${sbox('Verra', L?'crédits volontaires (émergents)':'voluntary credits (emerging)','--blue')}
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div><h2 style="margin:0">♟ ${L?'Intérêt financier & stratégies carbone':'Carbon value & strategies'}</h2>
+      <div class="cap" style="margin:4px 0 0">${L?'Comment Qair monétise le carbone selon le marché et ses actifs.':'How Qair monetizes carbon by market and asset base.'}</div></div>
+      ${toggle}
+    </div>
+    <div class="strat">${cards}</div>
+  </div>
+
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+    <a class="srcchip" href="${INSTR.carb.url}" target="_blank" rel="noopener">${INSTR.carb[state.lang]} ↗</a>
+    <a class="srcchip" href="${INSTR.go.url}" target="_blank" rel="noopener">${INSTR.go[state.lang]} ↗</a>
+  </div>
+  <div class="note">${L?'EUA, GOs et crédits volontaires illustratifs — à brancher sur ICE / Bloomberg / AIB / Verra en production. Rappel : un producteur renouvelable ne reçoit pas d\'EUA ; la valeur vient du pass-through ETS, des Garanties d\'Origine et, en marchés émergents, des crédits volontaires. 3DT évalue et sélectionne ; les décisions restent celles de Qair.':'EUA, GOs and voluntary credits illustrative — to be connected to ICE / Bloomberg / AIB / Verra at deployment. Reminder: a renewable producer receives no EUAs; value comes from ETS pass-through, Guarantees of Origin and, in emerging markets, voluntary credits. 3DT evaluates and selects; decisions remain Qair.'}</div>`;
 }
+
 function vTreas(){
   const alloc=[["--blue",64],["--green",24],["--mut",12]];
   let bars=`<div style="display:flex;height:16px;border-radius:999px;overflow:hidden;margin:8px 0 4px">
@@ -443,6 +631,8 @@ function renderHeader(){
   document.querySelectorAll('[data-i18n]').forEach(el=>{el.innerHTML=t(el.getAttribute('data-i18n'));});
 }
 function go(view){state.view=view;renderAside();renderMain();}
+function setPosture(p){state.posture=p;renderMain();}
+function setEua(p){state.euaView=p;renderMain();}
 function setLang(l){state.lang=l;document.documentElement.lang=l;
   document.getElementById('fr').classList.toggle('on',l==='fr');
   document.getElementById('en').classList.toggle('on',l==='en');
